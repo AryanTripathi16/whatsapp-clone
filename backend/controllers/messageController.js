@@ -1,164 +1,132 @@
 import Message from "../models/Message.js";
 
+// ================= SEND MESSAGE =================
 
-// Send Message
+export const sendMessage = async (req, res) => {
 
-export const sendMessage = async(req,res)=>{
+  try {
 
-try{
+    const {
+      sender,
+      receiver,
+      text,
+      image,
+      file,
+      fileName,
+    } = req.body;
 
+    if (!sender || !receiver) {
 
-const message = await Message.create({
+      return res.status(400).json({
+        message: "Sender and Receiver are required",
+      });
 
-sender:req.body.sender,
+    }
 
-receiver:req.body.receiver,
+    const message = await Message.create({
 
-text:req.body.text || "",
+      sender,
 
-image:req.body.image || "",
+      receiver,
 
-file:req.body.file || "",
+      text: text || "",
 
-fileName:req.body.fileName || "",
+      image: image || "",
 
-seen:false
+      file: file || "",
 
-});
+      fileName: fileName || "",
 
+      seen: false,
 
-res.status(201).json(message);
+    });
 
+    res.status(201).json(message);
 
-}
-catch(error){
+  } catch (error) {
 
-res.status(500).json({
-message:error.message
-});
+    res.status(500).json({
+      message: error.message,
+    });
 
-}
-
-
-};
-
-
-
-
-
-
-
-// Get Messages
-
-export const getMessages = async(req,res)=>{
-
-
-try{
-
-
-const {
-sender,
-receiver
-}=req.params;
-
-
-
-const messages = await Message.find({
-
-$or:[
-
-{
-sender,
-receiver
-},
-
-{
-sender:receiver,
-receiver:sender
-}
-
-]
-
-})
-.sort({
-createdAt:1
-});
-
-
-
-res.json(messages);
-
-
-}
-catch(error){
-
-res.status(500).json({
-message:error.message
-});
-
-}
-
+  }
 
 };
 
+// ================= GET MESSAGES =================
 
+export const getMessages = async (req, res) => {
 
+  try {
 
+    const { sender, receiver } = req.params;
 
+    const messages = await Message.find({
 
+      $or: [
 
-// Mark Seen
+        {
+          sender,
+          receiver,
+        },
 
-export const markSeen = async(req,res)=>{
+        {
+          sender: receiver,
+          receiver: sender,
+        },
 
+      ],
 
-try{
+    }).sort({
+      createdAt: 1,
+    });
 
+    res.json(messages);
 
-const {
-sender,
-receiver
-}=req.body;
+  } catch (error) {
 
+    res.status(500).json({
+      message: error.message,
+    });
 
+  }
 
-await Message.updateMany(
+};
 
-{
-sender,
-receiver,
-seen:false
-},
+// ================= MARK MESSAGE AS SEEN =================
 
-{
-$set:{
-seen:true
-}
-}
+export const markSeen = async (req, res) => {
 
-);
+  try {
 
+    const { sender, receiver } = req.body;
 
+    await Message.updateMany(
 
-res.json({
+      {
+        sender,
+        receiver,
+        seen: false,
+      },
 
-success:true
+      {
+        $set: {
+          seen: true,
+        },
+      }
 
-});
+    );
 
+    res.json({
+      success: true,
+    });
 
-}
-catch(error){
+  } catch (error) {
 
+    res.status(500).json({
+      message: error.message,
+    });
 
-res.status(500).json({
-
-message:error.message
-
-});
-
-
-}
-
+  }
 
 };

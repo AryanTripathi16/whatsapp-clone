@@ -1,456 +1,225 @@
 import { useEffect, useState } from "react";
-
 import api from "../services/api";
 import socket from "../services/socket";
 import UserCard from "./UserCard";
 
+function Sidebar({ selectedUser, setSelectedUser }) {
 
-function Sidebar({setSelectedUser}){
+  const [users, setUsers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [lastMessages, setLastMessages] = useState({});
+  const [unread, setUnread] = useState({});
+  const [search, setSearch] = useState("");
 
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
-const [users,setUsers]=useState([]);
+  useEffect(() => {
 
-const [onlineUsers,setOnlineUsers]=useState([]);
+    if (!currentUser) return;
 
-const [lastMessages,setLastMessages]=useState({});
+    socket.connect();
 
-const [unread,setUnread]=useState({});
+    socket.emit("addUser", currentUser._id);
 
+    loadUsers();
 
+    const onlineHandler = (data) => {
+      setOnlineUsers(data);
+    };
 
-const currentUser = JSON.parse(
-localStorage.getItem("user")
-);
+    const messageHandler = (data) => {
 
+      setLastMessages((prev) => ({
+        ...prev,
+        [data.sender]: data,
+      }));
 
+      setUnread((prev) => ({
+        ...prev,
+        [data.sender]: (prev[data.sender] || 0) + 1,
+      }));
 
+    };
 
+    socket.on("onlineUsers", onlineHandler);
+    socket.on("receiveMessage", messageHandler);
 
+    return () => {
+      socket.off("onlineUsers", onlineHandler);
+      socket.off("receiveMessage", messageHandler);
+    };
 
-useEffect(()=>{
+  }, []);
 
+  const loadUsers = async () => {
 
-const getUsers=async()=>{
+    try {
 
+      const res = await api.get("/users");
 
-try{
+      setUsers(
+        res.data.filter(
+          (u) => u._id !== currentUser._id
+        )
+      );
 
+    } catch (err) {
 
-const res = await api.get("/users");
+      console.log(err);
 
+    }
 
-setUsers(
+  };
 
-res.data.filter(
+  const selectUser = (user) => {
 
-u=>u._id!==currentUser._id
+    setSelectedUser(user);
 
-)
+    setUnread((prev) => ({
+      ...prev,
+      [user._id]: 0,
+    }));
 
-);
+  };
 
+  const filteredUsers = users.filter((user) =>
+    user.name
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  return (
+
+    <div
+      style={{
+        width: "320px",
+        borderRight: "1px solid #ddd",
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+      }}
+    >
+
+      <h2
+        style={{
+          padding: "15px",
+          margin: 0,
+          background: "#00a884",
+          color: "white",
+        }}
+      >
+        WhatsApp
+      </h2>
+
+      <div style={{ padding: "10px" }}>
+
+        <input
+          type="text"
+          placeholder="Search user..."
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+          style={{
+            width: "100%",
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+          }}
+        />
+
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+        }}
+      >
+
+        {filteredUsers.map((user) => (
+
+          <div
+            key={user._id}
+            onClick={() => selectUser(user)}
+            style={{
+              cursor: "pointer",
+              background:
+                selectedUser?._id === user._id
+                  ? "#ebf5ff"
+                  : "white",
+            }}
+          >
+
+            <UserCard
+              user={user}
+              onlineUsers={onlineUsers}
+            />
+
+            {lastMessages[user._id] && (
+
+              <div
+                style={{
+                  paddingLeft: "70px",
+                  paddingBottom: "10px",
+                  fontSize: "13px",
+                  color: "#666",
+                }}
+              >
+
+                <div>
+
+                  {lastMessages[user._id].text
+                    ? lastMessages[user._id].text.slice(0, 30)
+                    : "📎 Media"}
+
+                </div>
+
+                <small>
+
+                  {new Date(
+                    lastMessages[user._id].createdAt
+                  ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+
+                </small>
+
+                {unread[user._id] > 0 && (
+
+                  <span
+                    style={{
+                      float: "right",
+                      marginRight: "15px",
+                      background: "#25D366",
+                      color: "white",
+                      borderRadius: "50%",
+                      padding: "4px 8px",
+                      fontSize: "12px",
+                    }}
+                  >
+
+                    {unread[user._id]}
+
+                  </span>
+
+                )}
+
+              </div>
+
+            )}
+
+          </div>
+
+        ))}
+
+      </div>
+
+    </div>
+
+  );
 
 }
-catch(error){
-
-console.log(error);
-
-}
-
-
-};
-
-
-
-getUsers();
-
-
-
-
-
-
-
-// Online Users
-
-const onlineHandler=(data)=>{
-
-
-setOnlineUsers(data);
-
-
-};
-
-
-
-socket.on(
-
-"onlineUsers",
-
-onlineHandler
-
-);
-
-
-
-
-
-
-
-
-
-// Receive Message
-
-const messageHandler=(data)=>{
-
-
-setLastMessages(prev=>({
-
-...prev,
-
-[data.sender]:data
-
-}));
-
-
-
-setUnread(prev=>({
-
-
-...prev,
-
-
-[data.sender]: (prev[data.sender] || 0) + 1
-
-
-}));
-
-
-
-};
-
-
-
-socket.on(
-
-"receiveMessage",
-
-messageHandler
-
-);
-
-
-
-
-
-
-
-
-
-
-// Sender last message update
-
-const lastMessageHandler=(data)=>{
-
-
-setLastMessages(prev=>({
-
-
-...prev,
-
-
-[data.sender]:data
-
-
-}));
-
-
-};
-
-
-
-socket.on(
-
-"lastMessage",
-
-lastMessageHandler
-
-);
-
-
-
-
-
-
-
-
-
-return()=>{
-
-
-socket.off(
-
-"onlineUsers",
-
-onlineHandler
-
-);
-
-
-socket.off(
-
-"receiveMessage",
-
-messageHandler
-
-);
-
-
-socket.off(
-
-"lastMessage",
-
-lastMessageHandler
-
-);
-
-
-
-};
-
-
-
-},[]);
-
-
-
-
-
-
-
-
-
-const selectUser=(user)=>{
-
-
-setSelectedUser(user);
-
-
-
-setUnread(prev=>({
-
-...prev,
-
-[user._id]:0
-
-}));
-
-
-
-};
-
-
-
-
-
-
-
-
-
-return (
-
-<div
-
-style={{
-
-width:"300px",
-
-borderRight:"1px solid #ddd",
-
-overflowY:"auto"
-
-}}
-
->
-
-
-<h3
-
-style={{
-
-padding:"15px"
-
-}}
-
->
-
-Chats
-
-</h3>
-
-
-
-
-
-
-
-{
-
-users.map(user=>(
-
-
-<div key={user._id}>
-
-
-<UserCard
-
-user={user}
-
-setSelectedUser={selectUser}
-
-onlineUsers={onlineUsers}
-
-/>
-
-
-
-
-
-
-
-{
-
-lastMessages[user._id] &&
-
-<div
-
-style={{
-
-paddingLeft:"15px",
-
-paddingBottom:"10px",
-
-fontSize:"13px",
-
-color:"gray"
-
-}}
-
->
-
-
-<span>
-
-{
-
-lastMessages[user._id].text
-
-?
-
-lastMessages[user._id].text.slice(0,25)
-
-:
-
-"📎 Media"
-
-}
-
-</span>
-
-
-
-
-
-<span
-
-style={{
-
-marginLeft:"10px"
-
-}}
-
->
-
-{
-
-new Date(
-
-lastMessages[user._id].createdAt
-
-).toLocaleTimeString([],{
-
-hour:"2-digit",
-
-minute:"2-digit"
-
-})
-
-}
-
-</span>
-
-
-
-
-
-
-
-{
-
-unread[user._id] > 0 &&
-
-<span
-
-style={{
-
-marginLeft:"10px",
-
-background:"green",
-
-color:"white",
-
-borderRadius:"50%",
-
-padding:"3px 7px"
-
-}}
-
->
-
-{unread[user._id]}
-
-</span>
-
-}
-
-
-
-
-
-</div>
-
-
-}
-
-
-
-</div>
-
-
-))
-
-}
-
-
-
-
-
-</div>
-
-
-);
-
-
-}
-
 
 export default Sidebar;

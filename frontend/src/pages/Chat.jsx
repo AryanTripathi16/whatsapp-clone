@@ -6,180 +6,182 @@ import ChatBox from "../components/ChatBox";
 import socket from "../services/socket";
 
 
+function Chat() {
 
-function Chat(){
 
+  const [selectedUser, setSelectedUser] = useState(null);
 
-const [selectedUser,setSelectedUser] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
+  const [lastSeen, setLastSeen] = useState({});
 
-const [onlineUsers,setOnlineUsers] = useState([]);
 
 
-const [lastSeen,setLastSeen] = useState({});
 
 
+  useEffect(() => {
 
 
+    const currentUser = JSON.parse(
+      localStorage.getItem("user")
+    );
 
 
 
-useEffect(()=>{
+    if (!currentUser?._id) return;
 
 
-const onlineHandler=(users)=>{
 
+    // Socket Connect
 
-console.log(
-"ONLINE USERS",
-users
-);
+    if (!socket.connected) {
 
+      socket.connect();
 
-setOnlineUsers(users);
+    }
 
 
-};
 
+    // Add Current User
 
+    socket.emit(
+      "addUser",
+      currentUser._id
+    );
 
 
 
-const lastSeenHandler=(data)=>{
 
 
-console.log(
-"LAST SEEN",
-data
-);
 
+    // Online Users
 
-setLastSeen(data);
+    const onlineHandler = (users)=>{
 
+      setOnlineUsers(users);
 
-};
+    };
 
 
 
 
 
+    // Last Seen
 
-socket.on(
+    const lastSeenHandler = (data)=>{
 
-"onlineUsers",
+      setLastSeen(data);
 
-onlineHandler
+    };
 
-);
 
 
 
 
+    socket.on(
+      "onlineUsers",
+      onlineHandler
+    );
 
-socket.on(
 
-"lastSeen",
 
-lastSeenHandler
+    socket.on(
+      "lastSeen",
+      lastSeenHandler
+    );
 
-);
 
 
 
 
 
 
+    return ()=>{
 
 
-return()=>{
+      socket.off(
+        "onlineUsers",
+        onlineHandler
+      );
 
 
-socket.off(
+      socket.off(
+        "lastSeen",
+        lastSeenHandler
+      );
 
-"onlineUsers",
 
-onlineHandler
+    };
 
-);
 
 
+  }, []);
 
-socket.off(
 
-"lastSeen",
 
-lastSeenHandler
 
-);
 
 
 
-};
 
 
+  return (
 
-},[]);
+    <div
 
+      style={{
 
+        display:"flex",
 
+        width:"100%",
 
+        height:"100vh",
 
+        overflow:"hidden",
 
+        background:"#f0f2f5"
 
+      }}
 
+    >
 
 
-return (
 
-<div
+      <Sidebar
 
-style={{
+        setSelectedUser={
+          setSelectedUser
+        }
 
-display:"flex",
+      />
 
-height:"100vh"
 
-}}
 
->
 
 
+      <ChatBox
 
-<Sidebar
+        selectedUser={
+          selectedUser
+        }
 
-setSelectedUser={setSelectedUser}
+        onlineUsers={
+          onlineUsers
+        }
 
-/>
+        lastSeen={
+          lastSeen
+        }
 
+      />
 
 
 
 
 
+    </div>
 
-<ChatBox
-
-
-selectedUser={selectedUser}
-
-
-onlineUsers={onlineUsers}
-
-
-lastSeen={lastSeen}
-
-
-
-/>
-
-
-
-
-
-</div>
-
-);
-
+  );
 
 }
 

@@ -1,149 +1,75 @@
 function UserCard({
-user,
-setSelectedUser,
-onlineUsers
-}){
+  user,
+  setSelectedUser,
+  onlineUsers,
+  selectedUser,
+}) {
+  return (
+    <div
+      onClick={() => setSelectedUser && setSelectedUser(user)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        padding: "12px 15px",
+        cursor: "pointer",
+        borderBottom: "1px solid #eee",
+        background:
+          selectedUser?._id === user._id
+            ? "#ebf5ff"
+            : "#fff",
+        transition: "0.2s",
+      }}
+    >
+      {/* Avatar */}
 
+      <img
+        src={
+          user.avatar
+            ? `http://localhost:5001${user.avatar}`
+            : "https://via.placeholder.com/50"
+        }
+        alt={user.name}
+        width="50"
+        height="50"
+        style={{
+          borderRadius: "50%",
+          objectFit: "cover",
+        }}
+      />
 
-return (
+      {/* User Info */}
 
-<div
+      <div
+        style={{
+          flex: 1,
+        }}
+      >
+        <h4
+          style={{
+            margin: 0,
+            fontSize: "16px",
+          }}
+        >
+          {user.name}
+        </h4>
 
-onClick={()=>setSelectedUser(user)}
-
-style={{
-
-padding:"15px",
-
-borderBottom:"1px solid #ddd",
-
-cursor:"pointer",
-
-display:"flex",
-
-alignItems:"center",
-
-gap:"10px"
-
-}}
-
->
-
-
-<img
-
-src={
-
-user.avatar
-
-?
-
-`http://localhost:5001${user.avatar}`
-
-:
-
-"https://via.placeholder.com/50"
-
+        <p
+          style={{
+            margin: "4px 0 0",
+            fontSize: "13px",
+            color: onlineUsers?.includes(user._id)
+              ? "green"
+              : "gray",
+          }}
+        >
+          {onlineUsers?.includes(user._id)
+            ? "🟢 Online"
+            : "⚪ Offline"}
+        </p>
+      </div>
+    </div>
+  );
 }
-
-alt="profile"
-
-width="50"
-
-height="50"
-
-style={{
-
-borderRadius:"50%",
-
-objectFit:"cover"
-
-}}
-
-/>
-
-
-
-
-
-<div>
-
-
-<h4
-
-style={{
-
-margin:"0"
-
-}}
-
->
-
-{user.name}
-
-</h4>
-
-
-
-
-
-{
-
-onlineUsers?.includes(user._id)
-
-?
-
-<p
-
-style={{
-
-color:"green",
-
-margin:"5px 0"
-
-}}
-
->
-
-🟢 Online
-
-</p>
-
-
-:
-
-<p
-
-style={{
-
-color:"gray",
-
-margin:"5px 0"
-
-}}
-
->
-
-⚪ Offline
-
-</p>
-
-
-}
-
-
-
-</div>
-
-
-
-
-</div>
-
-);
-
-
-}
-
 
 export default UserCard;
