@@ -1,26 +1,71 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./Login";
-import Register from "./Register";
-import Chat from "./Chat";
+import { Routes, Route } from "react-router-dom";
+
+
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Home from "./pages/Home";
+import Chat from "./pages/Chat";
+import Profile from "./pages/Profile";
+
+
 
 function App() {
+
+
   return (
-    <BrowserRouter>
 
-      <Routes>
+    <Routes>
 
-        <Route path="/" element={<Login />} />
 
-        <Route path="/login" element={<Login />} />
+      {/* Login */}
 
-        <Route path="/register" element={<Register />} />
+      <Route
+        path="/"
+        element={<Login />}
+      />
 
-        <Route path="/chat" element={<Chat />} />
 
-      </Routes>
 
-    </BrowserRouter>
+      {/* Register */}
+
+      <Route
+        path="/register"
+        element={<Register />}
+      />
+
+
+
+      {/* Home */}
+
+      <Route
+        path="/home"
+        element={<Home />}
+      />
+
+
+
+      {/* Chat */}
+
+      <Route
+        path="/chat"
+        element={<Chat />}
+      />
+
+
+
+      {/* Profile */}
+
+      <Route
+        path="/profile"
+        element={<Profile />}
+      />
+
+
+    </Routes>
+
   );
+
 }
+
 
 export default App;

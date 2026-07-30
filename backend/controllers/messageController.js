@@ -1,73 +1,164 @@
-const messageService = require("../services/messageService");
+import Message from "../models/Message.js";
 
-const sendMessage = async (req, res) => {
 
-    try {
+// Send Message
 
-        const message = await messageService.sendMessage(req.body);
+export const sendMessage = async(req,res)=>{
 
-        res.status(201).json(message);
+try{
 
-    } catch (error) {
 
-        console.log(error);
+const message = await Message.create({
 
-        res.status(500).json({
-            message: "Server Error"
-        });
+sender:req.body.sender,
 
-    }
+receiver:req.body.receiver,
 
-};
+text:req.body.text || "",
 
-const getMessages = async (req, res) => {
+image:req.body.image || "",
 
-    try {
+file:req.body.file || "",
 
-        const messages = await messageService.getMessages(
-            req.params.sender,
-            req.params.receiver
-        );
+fileName:req.body.fileName || "",
 
-        res.json(messages);
+seen:false
 
-    } catch (error) {
+});
 
-        console.log(error);
 
-        res.status(500).json({
-            message: "Server Error"
-        });
+res.status(201).json(message);
 
-    }
 
-};
+}
+catch(error){
 
-const updateStatus = async (req, res) => {
+res.status(500).json({
+message:error.message
+});
 
-    try {
+}
 
-        const message = await messageService.updateStatus(
-            req.params.id,
-            req.body.status
-        );
-
-        res.json(message);
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            message: "Server Error"
-        });
-
-    }
 
 };
 
-module.exports = {
-    sendMessage,
-    getMessages,
-    updateStatus
+
+
+
+
+
+
+// Get Messages
+
+export const getMessages = async(req,res)=>{
+
+
+try{
+
+
+const {
+sender,
+receiver
+}=req.params;
+
+
+
+const messages = await Message.find({
+
+$or:[
+
+{
+sender,
+receiver
+},
+
+{
+sender:receiver,
+receiver:sender
+}
+
+]
+
+})
+.sort({
+createdAt:1
+});
+
+
+
+res.json(messages);
+
+
+}
+catch(error){
+
+res.status(500).json({
+message:error.message
+});
+
+}
+
+
+};
+
+
+
+
+
+
+
+// Mark Seen
+
+export const markSeen = async(req,res)=>{
+
+
+try{
+
+
+const {
+sender,
+receiver
+}=req.body;
+
+
+
+await Message.updateMany(
+
+{
+sender,
+receiver,
+seen:false
+},
+
+{
+$set:{
+seen:true
+}
+}
+
+);
+
+
+
+res.json({
+
+success:true
+
+});
+
+
+}
+catch(error){
+
+
+res.status(500).json({
+
+message:error.message
+
+});
+
+
+}
+
+
 };

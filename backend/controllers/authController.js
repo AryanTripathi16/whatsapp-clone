@@ -1,46 +1,86 @@
-const authService = require("../services/authService");
+import User from "../models/User.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
+export const register = async (req, res) => {
+  try {
 
-// Register
-const register = async (req, res) => {
+    const { name, email, password } = req.body;
 
-    try {
+    const exist = await User.findOne({ email });
 
-        const result = await authService.register(req.body);
-
-        res.status(201).json(result);
-
-    } catch (error) {
-
-        res.status(400).json({
-            message: error.message
-        });
-
+    if (exist) {
+      return res.status(400).json({
+        message: "User Already Exists",
+      });
     }
 
+    const hash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hash,
+    });
+
+    res.status(201).json({
+      message: "Registration Successful",
+      user,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };
 
+export const login = async (req, res) => {
 
-// Login
-const login = async (req, res) => {
+  try {
 
-    try {
+    const { email, password } = req.body;
 
-        const result = await authService.login(req.body);
+    const user = await User.findOne({ email });
 
-        res.json(result);
-
-    } catch (error) {
-
-        res.status(400).json({
-            message: error.message
-        });
-
+    if (!user) {
+      return res.status(400).json({
+        message: "User Not Found",
+      });
     }
 
-};
+    const match = await bcrypt.compare(
+      password,
+      user.password
+    );
 
-module.exports = {
-    register,
-    login
+    if (!match) {
+      return res.status(400).json({
+        message: "Wrong Password",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    res.json({
+      token,
+      user,
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      message: err.message,
+    });
+
+  }
+
 };

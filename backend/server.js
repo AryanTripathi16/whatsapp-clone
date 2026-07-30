@@ -1,56 +1,405 @@
-const express = require("express");
-const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
-require("dotenv").config();
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import mongoose from "mongoose";
+import http from "http";
+import { Server } from "socket.io";
 
-// Database
-const connectDB = require("./config/db");
 
-// Socket
-const socketHandler = require("./socket/socket");
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/users.js";
+import messageRoutes from "./routes/messages.js";
+import uploadRoutes from "./routes/upload.js";
 
-// Routes
-const authRoutes = require("./routes/auth");
-const userRoutes = require("./routes/users");
-const messageRoutes = require("./routes/messages");
+
+dotenv.config();
+
 
 const app = express();
 
-// Connect Database
-connectDB();
 
-// Create HTTP Server
-const server = http.createServer(app);
+// middleware
 
-// Socket.io
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"],
-  },
-});
+app.use(
+cors({
+    origin:"http://localhost:5173",
+    credentials:true
+})
+);
 
-// Initialize Socket
-socketHandler(io);
 
-// Middleware
-app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/messages", messageRoutes);
 
-// Test Route
-app.get("/", (req, res) => {
-  res.send("🚀 WhatsApp Clone Backend Running...");
+app.use(
+"/uploads",
+express.static("uploads")
+);
+
+
+
+
+// DATABASE
+
+mongoose.connect(process.env.MONGO_URL)
+.then(()=>{
+    console.log("MongoDB Connected");
+})
+.catch(err=>{
+    console.log("Mongo Error:",err.message);
 });
 
-// Start Server
-const PORT = process.env.PORT || 8000;
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+
+
+
+// ROUTES
+
+app.use("/api/auth",authRoutes);
+
+app.use("/api/users",userRoutes);
+
+app.use("/api/messages",messageRoutes);
+
+app.use("/api/upload",uploadRoutes);
+
+
+
+
+
+
+// HTTP SERVER
+
+const server=http.createServer(app);
+
+
+
+
+
+
+// SOCKET SERVER
+
+const io=new Server(server,{
+
+cors:{
+    origin:"http://localhost:5173",
+    credentials:true
+}
+
 });
+
+
+
+
+
+
+// USERS STORAGE
+
+let onlineUsers={};
+
+let lastSeen={};
+
+
+
+
+
+
+
+io.on("connection",(socket)=>{
+
+
+console.log(
+"Socket connected:",
+socket.id
+);
+
+
+
+
+// ADD USER
+
+socket.on(
+"addUser",
+(userId)=>{
+
+
+if(!userId) return;
+
+
+onlineUsers[userId]=socket.id;
+
+
+delete lastSeen[userId];
+
+
+
+io.emit(
+"onlineUsers",
+Object.keys(onlineUsers)
+);
+
+
+io.emit(
+"lastSeen",
+lastSeen
+);
+
+
+
+});
+
+
+
+
+
+
+
+
+// SEND MESSAGE
+
+socket.on(
+"sendMessage",
+(message)=>{
+
+
+if(!message) return;
+
+
+const receiverSocket =
+onlineUsers[message.receiver];
+
+
+
+if(receiverSocket){
+
+
+io.to(receiverSocket)
+.emit(
+"receiveMessage",
+message
+);
+
+
+}
+
+
+
+});
+
+
+
+
+
+
+
+
+
+// MESSAGE SEEN
+
+socket.on(
+"messageSeen",
+(data)=>{
+
+
+if(!data) return;
+
+
+
+const senderSocket =
+onlineUsers[data.sender];
+
+
+
+if(senderSocket){
+
+
+io.to(senderSocket)
+.emit(
+"messageSeen",
+{
+
+sender:data.sender,
+
+receiver:data.receiver
+
+}
+);
+
+
+}
+
+
+
+});
+
+
+
+
+
+
+
+
+
+
+// TYPING
+
+socket.on(
+"typing",
+(data)=>{
+
+if(!data) return;
+
+
+const receiverSocket =
+onlineUsers[data.receiver];
+
+
+if(receiverSocket){
+
+io.to(receiverSocket)
+.emit(
+"typing",
+{
+sender:data.sender
+}
+);
+
+}
+
+
+});
+
+
+
+
+
+
+
+
+// STOP TYPING
+
+
+socket.on(
+"stopTyping",
+(data)=>{
+
+
+if(!data) return;
+
+
+const receiverSocket =
+onlineUsers[data.receiver];
+
+
+if(receiverSocket){
+
+io.to(receiverSocket)
+.emit(
+"stopTyping",
+{
+sender:data.sender
+}
+);
+
+}
+
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
+// DISCONNECT
+
+socket.on(
+"disconnect",
+()=>{
+
+
+let userId=null;
+
+
+
+for(
+let id in onlineUsers
+){
+
+
+if(
+onlineUsers[id]===socket.id
+){
+
+
+userId=id;
+
+
+delete onlineUsers[id];
+
+
+lastSeen[id]=
+new Date().toISOString();
+
+
+break;
+
+}
+
+
+}
+
+
+
+
+
+io.emit(
+"onlineUsers",
+Object.keys(onlineUsers)
+);
+
+
+io.emit(
+"lastSeen",
+lastSeen
+);
+
+
+
+console.log(
+"Disconnected:",
+socket.id
+);
+
+
+
+});
+
+
+
+
+
+
+});
+
+
+
+
+
+
+server.listen(
+5001,
+()=>{
+
+console.log(
+"Server running at 5001"
+);
+
+}
+);

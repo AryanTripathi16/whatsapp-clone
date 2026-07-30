@@ -1,25 +1,60 @@
-const userService = require("../services/userService");
+import User from "../models/User.js";
 
-const getUsers = async (req, res) => {
 
-    try {
+export const updateAvatar = async (req,res)=>{
 
-        const users = await userService.getUsers();
+  try{
 
-        res.json(users);
 
-    } catch (error) {
+    const { userId } = req.body;
 
-        console.log(error);
 
-        res.status(500).json({
-            message: "Server Error"
-        });
+    if(!req.file){
+
+      return res.status(400).json({
+        message:"Please upload image"
+      });
 
     }
 
-};
 
-module.exports = {
-    getUsers
+
+    const user = await User.findByIdAndUpdate(
+
+      userId,
+
+      {
+        avatar:req.file.filename
+      },
+
+      {
+        new:true
+      }
+
+    );
+
+
+
+    res.json({
+
+      message:"Avatar Updated Successfully",
+
+      user
+
+    });
+
+
+
+  }catch(error){
+
+
+    res.status(500).json({
+
+      message:error.message
+
+    });
+
+
+  }
+
 };

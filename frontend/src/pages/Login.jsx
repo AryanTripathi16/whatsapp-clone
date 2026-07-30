@@ -1,23 +1,38 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+
 import api from "../services/api";
 import useAuth from "../hooks/useAuth";
 
+
+
 function Login() {
 
+
   const navigate = useNavigate();
+
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
-  const [loading, setLoading] = useState(false);
 
-  const submitHandler = async (e) => {
+  const [email,setEmail] = useState("");
+
+  const [password,setPassword] = useState("");
+
+  const [loading,setLoading] = useState(false);
+
+
+
+
+
+  const submitHandler = async(e)=>{
+
 
     e.preventDefault();
 
-    if (!email || !password) {
+
+
+    if(!email || !password){
 
       alert("Please fill all fields");
 
@@ -25,25 +40,45 @@ function Login() {
 
     }
 
-    try {
+
+
+    try{
+
 
       setLoading(true);
 
-      const response = await api.post("/auth/login", {
 
-        email,
 
-        password
+      const response = await api.post(
+        "/auth/login",
+        {
+          email,
+          password
+        }
+      );
 
-      });
+
+
+      // Save user + token
 
       login(response.data);
 
-      alert("Login Successful");
+
+
+      alert(
+        "Login Successful"
+      );
+
+
+
+      // Open Chat Page
 
       navigate("/chat");
 
-    } catch (error) {
+
+
+    }catch(error){
+
 
       alert(
 
@@ -53,48 +88,110 @@ function Login() {
 
       );
 
-    } finally {
+
+    }finally{
+
 
       setLoading(false);
 
+
     }
+
 
   };
 
+
+
+
+
+
   return (
+
 
     <div className="login-container">
 
+
       <form
+
         className="login-form"
+
         onSubmit={submitHandler}
+
       >
 
-        <h1>WhatsApp Clone</h1>
+
+
+        <h1>
+          WhatsApp Clone
+        </h1>
+
+
+
 
         <input
+
           type="email"
+
           placeholder="Email"
+
           value={email}
-          onChange={(e)=>setEmail(e.target.value)}
+
+          onChange={(e)=>
+            setEmail(e.target.value)
+          }
+
         />
+
+
+
+
 
         <input
+
           type="password"
+
           placeholder="Password"
+
           value={password}
-          onChange={(e)=>setPassword(e.target.value)}
+
+          onChange={(e)=>
+            setPassword(e.target.value)
+          }
+
         />
 
-        <button type="submit">
 
-          {loading ? "Please Wait..." : "Login"}
+
+
+
+
+        <button
+
+          type="submit"
+
+          disabled={loading}
+
+        >
+
+          {
+            loading
+            ? "Please Wait..."
+            : "Login"
+          }
+
 
         </button>
+
+
+
+
+
 
         <p>
 
           Don't have an account?
+
+          {" "}
 
           <Link to="/register">
 
@@ -102,14 +199,22 @@ function Login() {
 
           </Link>
 
+
         </p>
+
+
+
 
       </form>
 
+
     </div>
+
 
   );
 
 }
+
+
 
 export default Login;
