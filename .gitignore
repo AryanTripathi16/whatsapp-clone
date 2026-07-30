@@ -4,3 +4,4 @@ dist/
 build/
 .DS_Storenode_modules/
 backend/node_modules/
+backend/uploads/
