@@ -4,10 +4,13 @@ import socket from "../services/socket";
 
 function ChatBox({ selectedUser, onlineUsers, lastSeen }) {
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [user] = useState(
+  JSON.parse(localStorage.getItem("user"))
+);
 
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
+  const [replyMessage, setReplyMessage] = useState(null);
 
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -38,8 +41,8 @@ function ChatBox({ selectedUser, onlineUsers, lastSeen }) {
         const res = await api.get(
           `/messages/${user._id}/${selectedUser._id}`
         );
-
-        setMessages(res.data);
+            console.log("SERVER MESSAGES:", res.data);
+            setMessages(res.data);
 
         // Seen Update
 
@@ -122,41 +125,63 @@ function ChatBox({ selectedUser, onlineUsers, lastSeen }) {
 
   // ================= MESSAGE SEEN =================
 
+    
   useEffect(() => {
 
-    const seenHandler = (data) => {
+  const seenHandler = ({ sender, receiver }) => {
 
-      if (!data) return;
+    console.log("SEEN DATA:", sender, receiver);
 
-      setMessages((prev) =>
-        prev.map((msg) => {
+    setMessages((prev) =>
+      prev.map((msg) => {
 
-          if (
-            msg.sender === user._id &&
-            msg.receiver === data.sender
-          ) {
-            return {
-              ...msg,
-              seen: true,
-            };
-          }
+        if (
+          msg.sender.toString() === sender.toString() &&
+          msg.receiver.toString() === receiver.toString()
+        ) {
+          return {
+            ...msg,
+            seen: true,
+          };
+        }
 
-          return msg;
+        return msg;
+      })
+    );
+  };
 
-        })
+  socket.on("messageSeen", seenHandler);
+
+  return () => {
+    socket.off("messageSeen", seenHandler);
+  };
+
+}, []);
+
+
+useEffect(()=>{
+
+  socket.on("messageDeleted",(data)=>{
+
+    setMessages((oldMessages)=>{
+
+      return oldMessages.filter(
+        (msg)=>msg._id !== data.messageId
       );
 
-    };
+    });
 
-    socket.on("messageSeen", seenHandler);
+  });
 
-    return () => {
 
-      socket.off("messageSeen", seenHandler);
+  return ()=>{
 
-    };
+    socket.off("messageDeleted");
 
-  }, [user]);
+  };
+
+
+},[]);
 
 
 
@@ -279,6 +304,10 @@ const sendMessage = async () => {
 
       text: message,
 
+      replyTo: replyMessage ? replyMessage._id : "",
+
+      replyText: replyMessage ? replyMessage.text : "",
+
       image: imageUrl,
 
       file: fileUrl,
@@ -341,6 +370,8 @@ const sendMessage = async () => {
 
     setMessage("");
 
+    setReplyMessage(null);
+
     setImage(null);
 
     setImagePreview("");
@@ -350,6 +381,39 @@ const sendMessage = async () => {
   }
 
   catch (err) {
+
+    console.log(err);
+
+  }
+
+};
+
+// ================= DELETE MESSAGE =================
+
+const deleteMessage = async (msg) => {
+
+  try {
+
+    await api.delete(`/messages/${msg._id}`);
+
+
+    setMessages((prev)=>
+      prev.filter(
+        (m)=>m._id !== msg._id
+      )
+    );
+
+
+    socket.emit("deleteMessage",{
+
+      messageId: msg._id,
+
+      receiver: msg.receiver
+
+    });
+
+
+  } catch(err){
 
     console.log(err);
 
@@ -391,6 +455,7 @@ height:"100%"
 :
 
 <>
+
 
 {/* ================= HEADER ================= */}
 
@@ -625,11 +690,88 @@ rel="noreferrer"
 
 }
 
+{
+msg.replyText && (
+
+<div
+style={{
+background:"#d0d0d0",
+padding:"6px",
+borderRadius:"6px",
+marginBottom:"5px",
+fontSize:"13px",
+color:"#555"
+}}
+>
+
+↩ {msg.replyText}
+
+</div>
+
+)
+}
+
 <p>
 
 {msg.text}
 
 </p>
+
+{
+msg.sender !== user._id && (
+
+<button
+onClick={()=>setReplyMessage(msg)}
+style={{
+border:"none",
+background:"transparent",
+color:"blue",
+cursor:"pointer"
+}}
+>
+Reply
+</button>
+
+)
+}
+
+
+{
+msg.sender === user._id &&
+
+<button
+
+onClick={()=>{
+
+
+console.log("Button clicked");
+console.log("Message ID:", msg._id);
+
+
+deleteMessage(msg);
+
+}}
+
+style={{
+
+background:"red",
+color:"white",
+border:"none",
+borderRadius:"5px",
+padding:"5px",
+marginTop:"5px",
+cursor:"pointer"
+
+}}
+
+>
+
+Delete
+
+</button>
+
+}
+
 
 <div
 
@@ -758,6 +900,49 @@ paddingBottom:"5px"
 }
 
 {/* ================= INPUT AREA ================= */}
+
+{
+replyMessage && (
+
+<div
+style={{
+background:"#fff",
+padding:"8px",
+margin:"5px 10px",
+borderLeft:"4px solid green",
+borderRadius:"5px"
+}}
+>
+
+<div>
+Replying to:
+</div>
+
+<b>
+{replyMessage.text}
+</b>
+
+
+<button
+
+onClick={()=>setReplyMessage(null)}
+
+style={{
+float:"right",
+border:"none",
+background:"transparent",
+cursor:"pointer"
+}}
+
+>
+❌
+</button>
+
+
+</div>
+
+)
+}
 
 <div
 

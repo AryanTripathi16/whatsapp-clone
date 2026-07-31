@@ -34,10 +34,24 @@ const messageSchema = new mongoose.Schema(
       default: "",
     },
 
+    replyTo: {
+      type: String,
+      default: "",
+    },
+
+    replyText: {
+      type: String,
+      default: "",
+    },
+
     seen: {
       type: Boolean,
       default: false,
     },
+    deleted:{
+    type:Boolean,
+    default:false
+  }
   },
   {
     timestamps: true,

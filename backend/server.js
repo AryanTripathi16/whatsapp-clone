@@ -237,6 +237,34 @@ receiver:data.receiver
 
 
 
+// DELETE MESSAGE
+
+socket.on(
+"deleteMessage",
+(data)=>{
+
+if(!data) return;
+
+
+const receiverSocket =
+onlineUsers[data.receiver];
+
+
+if(receiverSocket){
+
+io.to(receiverSocket)
+.emit(
+"messageDeleted",
+{
+messageId:data.messageId
+}
+);
+
+}
+
+
+});
+
 
 
 

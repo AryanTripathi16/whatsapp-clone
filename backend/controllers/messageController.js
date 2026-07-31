@@ -6,14 +6,16 @@ export const sendMessage = async (req, res) => {
 
   try {
 
-    const {
-      sender,
-      receiver,
-      text,
-      image,
-      file,
-      fileName,
-    } = req.body;
+const {
+  sender,
+  receiver,
+  text,
+  image,
+  file,
+  fileName,
+  replyTo,
+  replyText,
+} = req.body;
 
     if (!sender || !receiver) {
 
@@ -36,6 +38,10 @@ export const sendMessage = async (req, res) => {
       file: file || "",
 
       fileName: fileName || "",
+
+      replyTo: replyTo || "",
+
+      replyText: replyText || "",
 
       seen: false,
 
@@ -63,23 +69,25 @@ export const getMessages = async (req, res) => {
 
     const messages = await Message.find({
 
-      $or: [
+  deleted: false,
 
-        {
-          sender,
-          receiver,
-        },
+  $or: [
 
-        {
-          sender: receiver,
-          receiver: sender,
-        },
+    {
+      sender,
+      receiver,
+    },
 
-      ],
+    {
+      sender: receiver,
+      receiver: sender,
+    },
 
-    }).sort({
-      createdAt: 1,
-    });
+  ],
+
+}).sort({
+  createdAt: 1,
+});
 
     res.json(messages);
 
@@ -120,6 +128,54 @@ export const markSeen = async (req, res) => {
     res.json({
       success: true,
     });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
+
+  }
+
+};
+
+
+
+// ================= DELETE MESSAGE =================
+
+export const deleteMessage = async (req, res) => {
+
+  try {
+
+    const { id } = req.params;
+
+    console.log("DELETE ID:", id);
+
+    const message = await Message.findById(id);
+
+    console.log("MESSAGE:", message);
+
+    if (!message) {
+
+      return res.status(404).json({
+        message: "Message not found",
+      });
+
+    }
+
+
+      await Message.findByIdAndUpdate(
+        id,
+        {
+            deleted: true
+        }
+      );
+  
+    res.json({
+      success: true,
+      message: "Message deleted",
+    });
+
 
   } catch (error) {
 

@@ -3,7 +3,8 @@ import express from "express";
 import {
   sendMessage,
   getMessages,
-  markSeen
+  markSeen,
+  deleteMessage
 } from "../controllers/messageController.js";
 
 
@@ -36,6 +37,14 @@ router.put(
   markSeen
 );
 
+
+
+// Delete Message
+
+router.delete(
+  "/:id",
+  deleteMessage
+);
 
 
 // VERY IMPORTANT
