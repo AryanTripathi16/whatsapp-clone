@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import messageRoutes from "./routes/messages.js";
 import uploadRoutes from "./routes/upload.js";
+import Message from "./models/Message.js";
 
 
 dotenv.config();
@@ -159,7 +160,7 @@ lastSeen
 
 socket.on(
 "sendMessage",
-(message)=>{
+async (message)=>{
 
 
 if(!message) return;
@@ -172,11 +173,25 @@ onlineUsers[message.receiver];
 
 if(receiverSocket){
 
+    await Message.findByIdAndUpdate(
+  message._id,
+  {
+    status: "delivered",
+  }
+);
+
 
 io.to(receiverSocket)
 .emit(
 "receiveMessage",
 message
+);
+
+io.to(socket.id).emit(
+  "messageDelivered",
+  {
+    messageId: message._id,
+  }
 );
 
 
@@ -336,7 +351,67 @@ sender:data.sender
 
 
 
+// ================= CALL USER =================
 
+socket.on("callUser", (data) => {
+
+  const receiverSocket = onlineUsers[data.receiver];
+
+  if (receiverSocket) {
+
+    io.to(receiverSocket).emit("incomingCall", {
+      caller: data.caller,
+      type: data.type,
+      signal: data.signal
+    });
+
+  }
+
+});
+
+// ================= ACCEPT CALL =================
+
+socket.on("acceptCall", (data) => {
+
+  const callerSocket = onlineUsers[data.caller];
+
+  if (callerSocket) {
+
+    io.to(callerSocket).emit("callAccepted", data.signal);
+
+  }
+
+});
+
+// ================= REJECT CALL =================
+
+socket.on("rejectCall", (data) => {
+
+  console.log("CALL REJECT REQUEST:", data);
+
+  const callerSocket = onlineUsers[data.caller];
+
+  if (callerSocket) {
+
+    io.to(callerSocket).emit("callRejected", {
+      message:"User rejected call"
+    });
+
+  }
+
+});
+
+// ================= END CALL =================
+
+socket.on("endCall", (data) => {
+
+  const receiverSocket = onlineUsers[data.receiver];
+
+  if (receiverSocket) {
+    io.to(receiverSocket).emit("callEnded");
+  }
+
+});
 
 
 

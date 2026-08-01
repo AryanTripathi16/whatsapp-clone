@@ -32,6 +32,46 @@ const socketHandler = (io) => {
 
         });
 
+        
+
+
+// ================= VIDEO CALL =================
+
+socket.on("callUser", (data) => {
+
+    console.log("📞 Incoming Call:", data);
+
+    io.to(data.receiver).emit("incomingCall", {
+        caller: data.caller,
+        signal: data.signal,
+        type: data.type
+    });
+
+});
+
+
+socket.on("acceptCall", (data) => {
+
+    console.log("✅ Call Accepted:", data);
+
+    io.to(data.caller).emit("callAccepted", data.signal);
+
+});
+
+
+socket.on("rejectCall", (data) => {
+
+    io.to(data.caller).emit("callRejected");
+
+});
+
+
+socket.on("endCall", (data) => {
+
+    io.to(data.receiver).emit("callEnded");
+
+});
+
 
         // Typing
         socket.on("typing", (data) => {

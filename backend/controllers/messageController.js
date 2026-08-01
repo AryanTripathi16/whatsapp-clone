@@ -45,6 +45,8 @@ const {
 
       seen: false,
 
+      status: "sent",
+
     });
 
     res.status(201).json(message);

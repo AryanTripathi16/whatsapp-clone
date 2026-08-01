@@ -48,6 +48,13 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    
+    status: {
+  type: String,
+  enum: ["sent", "delivered", "seen"],
+  default: "sent",
+},
+
     deleted:{
     type:Boolean,
     default:false
