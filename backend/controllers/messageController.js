@@ -15,6 +15,8 @@ const {
   fileName,
   replyTo,
   replyText,
+  forwarded,
+  originalSender,
 } = req.body;
 
     if (!sender || !receiver) {
@@ -27,27 +29,20 @@ const {
 
     const message = await Message.create({
 
-      sender,
+  sender,
+  receiver,
+  text: text || "",
+  image: image || "",
+  file: file || "",
+  fileName: fileName || "",
+  replyTo: replyTo || "",
+  replyText: replyText || "",
+  forwarded: forwarded || false,
+  originalSender: originalSender || "",
+  seen: false,
+  status: "sent",
 
-      receiver,
-
-      text: text || "",
-
-      image: image || "",
-
-      file: file || "",
-
-      fileName: fileName || "",
-
-      replyTo: replyTo || "",
-
-      replyText: replyText || "",
-
-      seen: false,
-
-      status: "sent",
-
-    });
+});
 
     res.status(201).json(message);
 

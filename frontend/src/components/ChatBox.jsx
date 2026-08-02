@@ -20,6 +20,21 @@ function ChatBox({ selectedUser, onlineUsers, lastSeen }) {
   const [message, setMessage] = useState("");
   const [replyMessage, setReplyMessage] = useState(null);
 
+  const [forwardMsg, setForwardMsg] = useState(null);
+const [showForwardUsers, setShowForwardUsers] = useState(false);
+const [users, setUsers] = useState([]);
+
+const getUserName = (id) => {
+  const found = users.find((u) => u._id === id);
+  return found ? found.name : "Unknown User";
+};
+
+
+
+const [searchUser, setSearchUser] = useState("");
+
+const [selectedForwardUsers, setSelectedForwardUsers] = useState([]);
+
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
@@ -104,6 +119,10 @@ return () => clearInterval(timer);
             console.log("SERVER MESSAGES:", res.data);
             setMessages(res.data);
 
+
+          
+
+
         // ================= SEEN UPDATE =================
 
         await api.put("/messages/seen", {
@@ -125,6 +144,37 @@ return () => clearInterval(timer);
     loadMessages();
 
   }, [selectedUser, user]);
+
+
+  // ================= LOAD USERS FORWARD =================
+
+useEffect(()=>{
+
+  const loadUsers = async()=>{
+
+    try{
+
+      const res = await api.get("/users");
+
+      console.log("ALL USERS:", res.data);
+
+      setUsers(res.data);
+
+    }
+    catch(err){
+
+      console.log("USER ERROR:", err);
+
+    }
+
+  };
+
+
+  loadUsers();
+
+},[]);
+
+
 
     // ================= RECEIVE MESSAGE =================
 
@@ -478,6 +528,8 @@ const sendMessage = async () => {
         form
       );
 
+      
+
       imageUrl = res.data.url;
 
     }
@@ -648,6 +700,36 @@ const sendLocation = () => {
 
   );
 
+};
+
+// ================= FORWARD MESSAGE =================
+
+const forwardMessage = async (msg) => {
+
+  if (!selectedUser) return;
+
+  try {
+
+    const data = {
+      sender: user._id,
+      receiver: selectedUser._id,
+      text: msg.text,
+      image: msg.image || "",
+      file: msg.file || "",
+      fileName: msg.fileName || "",
+      forwarded: true,
+      seen: false,
+    };
+
+    const res = await api.post("/messages", data);
+
+    setMessages((prev) => [...prev, res.data]);
+
+    socket.emit("sendMessage", res.data);
+
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 // ================= DELETE MESSAGE =================
@@ -1534,12 +1616,40 @@ color:"#555"
 }}
 >
 
-↩ {msg.replyText}
+↪ {msg.replyText}
 
 </div>
 
 )
 }
+
+{msg.forwarded && (
+  <>
+    <div
+      style={{
+        fontSize: "12px",
+        color: "green",
+        fontStyle: "italic",
+        marginBottom: "5px"
+      }}
+    >
+      ↩ Forwarded
+    </div>
+
+    {/* Sirf receiver ko From dikhana */}
+    {msg.sender?.toString() !== user._id?.toString() && (
+      <div
+        style={{
+          fontSize: "12px",
+          color: "#666",
+          marginBottom: "5px"
+        }}
+      >
+        From: {getUserName(msg.originalSender)}
+      </div>
+    )}
+  </>
+)}
 
 
 {
@@ -1611,16 +1721,19 @@ Tap to Open in Google Maps
 
 ) : (
 
+
+  
+
 <p>{msg.text}</p>
 
 )
 }
 
 
-
 {
 msg.sender?.toString() !== user._id?.toString() && (
 
+<>
 <button
   onClick={() => setReplyMessage(msg)}
   style={{
@@ -1633,8 +1746,29 @@ msg.sender?.toString() !== user._id?.toString() && (
   Reply
 </button>
 
+
+<button
+  onClick={()=>{
+setForwardMsg(msg);
+setShowForwardUsers(true);
+}}
+  style={{
+    border: "none",
+    background: "transparent",
+    color: "blue",
+    // cursor: "pointer",
+    marginLeft:"5px",
+    padding:"5px 10px",
+    borderRadius:"5px"
+  }}
+>
+  Forward
+</button>
+</>
+
 )
 }
+
 
 
 {
@@ -1670,6 +1804,10 @@ cursor:"pointer"
 Delete
 
 </button>
+
+
+
+
 
 }
 
@@ -1755,6 +1893,240 @@ marginLeft:"5px"
 }
 
 </div>
+
+
+{
+showForwardUsers && (
+
+<div
+style={{
+position:"fixed",
+top:"100px",
+right:"20px",
+background:"#fff",
+width:"250px",
+padding:"15px",
+borderRadius:"10px",
+boxShadow:"0 2px 10px gray",
+zIndex:5000
+}}
+>
+
+<h3>
+Forward To
+</h3>
+
+<input
+type="text"
+placeholder="Search user..."
+value={searchUser}
+onChange={(e)=>setSearchUser(e.target.value)}
+style={{
+width:"90%",
+padding:"8px",
+marginBottom:"10px",
+border:"1px solid #ccc",
+borderRadius:"18px",
+outline:"none"
+}}
+/>
+
+
+{
+users
+.filter(u =>
+  u._id !== user._id &&
+  u.name.toLowerCase().includes(searchUser.toLowerCase())
+)
+.map(u=>(
+
+<div
+key={u._id}
+style={{
+display:"flex",
+alignItems:"center",
+padding:"10px",
+cursor:"pointer",
+borderBottom:"1px solid #ddd",
+background:selectedForwardUsers.includes(u._id)
+?
+"#d9fdd3"
+:
+"white"
+}}
+
+onClick={()=>{
+
+if(selectedForwardUsers.includes(u._id)){
+
+setSelectedForwardUsers(
+selectedForwardUsers.filter(id=>id!==u._id)
+);
+
+}
+else{
+
+setSelectedForwardUsers([
+...selectedForwardUsers,
+u._id
+]);
+
+}
+
+}}
+
+>
+
+
+<img
+src={
+u.avatar
+?
+`http://localhost:5001${u.avatar}`
+:
+"https://via.placeholder.com/40"
+}
+style={{
+width:"40px",
+height:"40px",
+borderRadius:"50%",
+marginRight:"10px"
+}}
+/>
+
+
+<span>
+{u.name}
+</span>
+
+
+</div>
+
+))
+}
+
+<button
+
+onClick={async()=>{
+
+if(selectedForwardUsers.length === 0){
+alert("Select user first");
+return;
+}
+
+try{
+
+for(let id of selectedForwardUsers){
+
+
+  const data={
+
+sender:user._id,
+
+receiver:id,
+
+text:forwardMsg.text || "",
+
+image:forwardMsg.image || "",
+
+file:forwardMsg.file || "",
+
+fileName:forwardMsg.fileName || "",
+
+forwarded:true,
+
+originalSender: forwardMsg.sender,
+
+seen:false,
+
+createdAt:new Date()
+
+};
+
+
+const res = await api.post(
+"/messages",
+data
+);
+
+if(id === selectedUser._id){
+
+ setMessages((prev)=>[
+   ...prev,
+   res.data
+ ]);
+
+
+}
+
+
+socket.emit(
+"sendMessage",
+res.data
+);
+
+}
+
+
+setShowForwardUsers(false);
+
+setSelectedForwardUsers([]);
+
+setSearchUser("");
+
+}
+catch(err){
+
+console.log(err);
+
+}
+
+}}
+
+style={{
+marginTop:"15px",
+width:"22%",
+background:"#25D366",
+color:"white",
+border:"none",
+padding:"2px",
+borderRadius:"5px",
+cursor:"pointer"
+}}
+
+>
+
+Forward ({selectedForwardUsers.length})
+
+</button>
+
+
+<button
+
+onClick={()=>{
+setShowForwardUsers(false);
+setSearchUser("");
+}}
+
+style={{
+marginTop:"15px",
+background:"red",
+color:"white",
+border:"none",
+padding:"9px",
+borderRadius:"5px"
+}}
+
+>
+Close
+</button>
+
+
+</div>
+
+)
+}
+
 
 {/* ================= IMAGE PREVIEW ================= */}
 

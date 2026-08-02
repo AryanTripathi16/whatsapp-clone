@@ -55,11 +55,31 @@ const messageSchema = new mongoose.Schema(
   default: "sent",
 },
 
+
+  forwarded: {
+  type: Boolean,
+  default: false,
+},
+
+originalSender:{
+  type:String,
+  default:""
+},
+
+
+reaction: {
+  type: String,
+  default: "",
+},
+
+
     deleted:{
     type:Boolean,
     default:false
   }
+  
   },
+  
   {
     timestamps: true,
   }

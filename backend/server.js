@@ -150,6 +150,18 @@ lastSeen
 });
 
 
+// MESSAGE REACTION
+
+
+socket.on("messageReaction", (data) => {
+
+    socket.broadcast.emit(
+        "messageReaction",
+        data
+    );
+
+});
+
 
 
 
