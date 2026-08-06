@@ -5,17 +5,20 @@ import ChatBox from "../components/ChatBox";
 
 import socket from "../services/socket";
 
+import Status from "./Status";
 
 function Chat() {
 
 
   const [selectedUser, setSelectedUser] = useState(null);
 
+  const [showStatus, setShowStatus] = useState(false);
+
   const [onlineUsers, setOnlineUsers] = useState([]);
 
   const [lastSeen, setLastSeen] = useState({});
 
-
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
 
 
@@ -117,6 +120,22 @@ function Chat() {
 
   }, []);
 
+  // MOBILE APP
+
+  useEffect(() => {
+
+  const handleResize = () => {
+    setIsMobile(window.innerWidth <= 768);
+  };
+
+  window.addEventListener("resize", handleResize);
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+  };
+
+}, []);
+
 
 
 
@@ -133,7 +152,7 @@ function Chat() {
 
         display:"flex",
 
-        width:"100%",
+        width:"100vw",
 
         height:"100vh",
 
@@ -146,35 +165,53 @@ function Chat() {
     >
 
 
+     {
+showStatus ? (
 
-      <Sidebar
+<Status setShowStatus={setShowStatus}/>
 
-        setSelectedUser={
-          setSelectedUser
-        }
+) : (
 
-      />
+<>
+
+{
+(!isMobile || !selectedUser) && (
+
+<Sidebar
+selectedUser={selectedUser}
+setSelectedUser={setSelectedUser}
+isMobile={isMobile}
+setShowStatus={setShowStatus}
+/>
+
+)
+}
 
 
+{
+(!isMobile || selectedUser) && (
 
+<ChatBox
 
+selectedUser={selectedUser}
 
-      <ChatBox
+onlineUsers={onlineUsers}
 
-        selectedUser={
-          selectedUser
-        }
+lastSeen={lastSeen}
 
-        onlineUsers={
-          onlineUsers
-        }
+goBack={() => setSelectedUser(null)}
 
-        lastSeen={
-          lastSeen
-        }
+isMobile={isMobile}
 
-      />
+/>
 
+)
+}
+
+</>
+
+)
+}
 
 
 

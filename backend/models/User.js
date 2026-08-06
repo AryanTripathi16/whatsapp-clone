@@ -25,6 +25,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "/uploads/default.png",
     },
+
+about: {
+  type: String,
+  default: "Hey there! I am using WhatsApp"
+},
+
+phone: {
+  type: String,
+  default: ""
+},
+
   },
   {
     timestamps: true,

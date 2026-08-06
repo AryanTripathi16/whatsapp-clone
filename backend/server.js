@@ -11,7 +11,7 @@ import userRoutes from "./routes/users.js";
 import messageRoutes from "./routes/messages.js";
 import uploadRoutes from "./routes/upload.js";
 import Message from "./models/Message.js";
-
+import statusRoutes from "./routes/status.js";
 
 dotenv.config();
 
@@ -64,7 +64,7 @@ app.use("/api/messages",messageRoutes);
 
 app.use("/api/upload",uploadRoutes);
 
-
+app.use("/api/status",statusRoutes);
 
 
 
@@ -107,6 +107,20 @@ let lastSeen={};
 
 
 io.on("connection",(socket)=>{
+
+  socket.on("newStatus",(status)=>{
+
+    io.emit("statusUpdated",status);
+
+});
+
+// DELETE STATUS REALTIME
+
+socket.on("deleteStatus",(data)=>{
+
+    io.emit("statusDeleted",data);
+
+});
 
 
 console.log(

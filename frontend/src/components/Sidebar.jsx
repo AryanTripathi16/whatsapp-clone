@@ -3,7 +3,16 @@ import api from "../services/api";
 import socket from "../services/socket";
 import UserCard from "./UserCard";
 
-function Sidebar({ selectedUser, setSelectedUser }) {
+import { useNavigate } from "react-router-dom";
+
+function Sidebar({
+  selectedUser,
+  setSelectedUser,
+  isMobile,
+  setShowStatus,
+}) {
+
+  const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -12,6 +21,7 @@ function Sidebar({ selectedUser, setSelectedUser }) {
   const [search, setSearch] = useState("");
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
+
 
   useEffect(() => {
 
@@ -92,7 +102,8 @@ function Sidebar({ selectedUser, setSelectedUser }) {
 
     <div
       style={{
-        width: "320px",
+        width: isMobile ? "100%" : "350px",
+        minWidth: isMobile ? "100%" : "350px",
         borderRight: "1px solid #ddd",
         display: "flex",
         flexDirection: "column",
@@ -101,15 +112,29 @@ function Sidebar({ selectedUser, setSelectedUser }) {
     >
 
       <h2
-        style={{
-          padding: "15px",
-          margin: 0,
-          background: "#00a884",
-          color: "white",
-        }}
-      >
-        WhatsApp
-      </h2>
+style={{
+  padding: "15px",
+  margin: 0,
+  background: "#00a884",
+  color: "white",
+  cursor:"pointer"
+}}
+onClick={() => navigate("/profile")}
+>
+  WhatsApp
+</h2>
+
+
+<div
+onClick={()=>setShowStatus(true)}
+style={{
+padding:"12px",
+borderBottom:"1px solid #ddd",
+cursor:"pointer"
+}}
+>
+🟢 Status
+</div>
 
       <div style={{ padding: "10px" }}>
 
@@ -121,9 +146,9 @@ function Sidebar({ selectedUser, setSelectedUser }) {
             setSearch(e.target.value)
           }
           style={{
-            width: "100%",
+            width: "90%",
             padding: "10px",
-            borderRadius: "8px",
+            borderRadius: "29px",
             border: "1px solid #ccc",
           }}
         />
@@ -151,10 +176,12 @@ function Sidebar({ selectedUser, setSelectedUser }) {
             }}
           >
 
-            <UserCard
-              user={user}
-              onlineUsers={onlineUsers}
-            />
+              <UserCard
+  user={user}
+  onlineUsers={onlineUsers}
+  setSelectedUser={setSelectedUser}
+  selectedUser={selectedUser}
+/>
 
             {lastMessages[user._id] && (
 

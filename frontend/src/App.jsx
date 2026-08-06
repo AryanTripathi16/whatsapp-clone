@@ -7,7 +7,7 @@ import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 
-
+import Status from "./pages/Status";
 
 function App() {
 
@@ -59,6 +59,12 @@ function App() {
         path="/profile"
         element={<Profile />}
       />
+
+
+
+      {/* Status */}
+
+      <Route path="/status" element={<Status />} />
 
 
     </Routes>

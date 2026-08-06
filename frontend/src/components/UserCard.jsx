@@ -23,20 +23,20 @@ function UserCard({
     >
       {/* Avatar */}
 
-      <img
-        src={
-          user.avatar
-            ? `http://localhost:5001${user.avatar}`
-            : "https://via.placeholder.com/50"
-        }
-        alt={user.name}
-        width="50"
-        height="50"
-        style={{
-          borderRadius: "50%",
-          objectFit: "cover",
-        }}
-      />
+       <img
+  src={
+    user.avatar
+      ? `http://localhost:5001${user.avatar}`
+      : "https://via.placeholder.com/50"
+  }
+  alt={user.name}
+  width="50"
+  height="50"
+  style={{
+    borderRadius: "50%",
+    objectFit: "cover",
+  }}
+/>
 
       {/* User Info */}
 

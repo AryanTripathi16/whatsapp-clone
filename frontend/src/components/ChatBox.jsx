@@ -10,7 +10,23 @@ import {
 } from "react-icons/fi";
  import Peer from "simple-peer";
 
-function ChatBox({ selectedUser, onlineUsers, lastSeen }) {
+import Status from "../pages/Status";
+
+ function ChatBox({
+
+selectedUser,
+
+onlineUsers,
+
+lastSeen,
+
+goBack,
+
+isMobile
+
+}) {
+
+
 
   const [user] = useState(
   JSON.parse(localStorage.getItem("user"))
@@ -76,7 +92,10 @@ const [videoOff,setVideoOff] = useState(false);
 
 const [callTime, setCallTime] = useState(0);
 
+const [showProfile, setShowProfile] = useState(false);
 
+
+const [showStatus, setShowStatus] = useState(false);
 
 useEffect(() => {
 
@@ -761,7 +780,6 @@ const deleteMessage = async (msg) => {
   } catch(err){
 
     console.log(err);
-
   }
 
 };
@@ -971,11 +989,12 @@ return (
 
 <div
 style={{
-flex:1,
-display:"flex",
-flexDirection:"column",
-height:"100vh",
-background:"#ece5dd"
+flex: 1,
+width: "100%",
+display: "flex",
+flexDirection: "column",
+height: "100vh",
+background: "#ece5dd"
 }}
 >
 
@@ -1005,6 +1024,23 @@ height:"100%"
 
 {/* ================= HEADER ================= */}
 
+
+{
+isMobile && (
+
+<button
+onClick={goBack}
+>
+
+←
+
+</button>
+
+)
+}
+
+
+
 <div
 style={{
 height:"70px",
@@ -1016,38 +1052,62 @@ borderBottom:"1px solid #ddd"
 }}
 >
 
+  {isMobile && (
+  <button
+    onClick={goBack}
+    style={{
+       width: "40px",
+      height: "40px",
+      border: "none",
+      background: "transparent",
+      color: "#54656f",
+      fontSize: "24px",
+      fontWeight: "bold",
+      cursor: "pointer",
+      borderRadius: "50%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: "10px",
+      transition: "0.2s",
+    }}
+  >
+    
+    ←
+  </button>
+)}
+
 <img
-
-src={
-selectedUser.avatar
-?
-`http://localhost:5001${selectedUser.avatar}`
-:
-"https://via.placeholder.com/50"
-}
-
-alt="avatar"
-
-style={{
-width:"50px",
-height:"50px",
-borderRadius:"50%",
-objectFit:"cover",
-marginRight:"15px"
-}}
-
+  onClick={() => setShowProfile(true)}
+  src={
+    selectedUser.avatar
+      ? `http://localhost:5001${selectedUser.avatar}`
+      : "https://via.placeholder.com/50"
+  }
+  alt="avatar"
+  style={{
+    width: "50px",
+    height: "50px",
+    borderRadius: "50%",
+    objectFit: "cover",
+    marginRight: "15px",
+    cursor: "pointer"
+  }}
 />
+
+
 
 <div>
 
 <h3
-style={{
-margin:0
-}}
+  style={{
+    margin: 0,
+    color: "#111",   // ya "black"
+    fontWeight: "600",
+    fontSize: "18px"
+  }}
 >
-
-{selectedUser.name}
-
+  {selectedUser.name}
 </h3>
 
 <small>
@@ -1461,6 +1521,80 @@ videoOff ? "📷 Camera On" : "🚫 Camera Off"
 )
 }
 
+  </div>
+)}
+
+{showProfile && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        background: "#fff",
+        width: "350px",
+        borderRadius: "10px",
+        padding: "20px",
+        textAlign: "center",
+      }}
+    >
+      <img
+        src={
+          selectedUser.avatar
+            ? `http://localhost:5001${selectedUser.avatar}`
+            : "https://via.placeholder.com/150"
+        }
+        style={{
+          width: "150px",
+          height: "150px",
+          borderRadius: "50%",
+          objectFit: "cover",
+        }}
+      />
+
+      <h2
+  style={{
+    color: "#111",
+    textAlign: "center",
+    marginTop: "10px"
+  }}
+>
+  {selectedUser.name}
+</h2>
+
+      <p>
+        <b>Phone:</b> {selectedUser.phone || "Not Available"}
+      </p>
+
+      <p>
+        <b>About:</b>{" "}
+        {selectedUser.about || "Hey there! I am using WhatsApp"}
+      </p>
+
+      <button
+        onClick={() => setShowProfile(false)}
+        style={{
+          padding: "10px 20px",
+          background: "#25D366",
+          color: "#fff",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+        }}
+      >
+        Close
+      </button>
+    </div>
   </div>
 )}
 
@@ -1927,6 +2061,7 @@ padding:"8px",
 marginBottom:"10px",
 border:"1px solid #ccc",
 borderRadius:"18px",
+ padding:"8px",
 outline:"none"
 }}
 />
